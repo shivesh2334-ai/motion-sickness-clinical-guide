@@ -1,0 +1,17 @@
+const assert=require('node:assert/strict');
+const {assess}=require('./clinical.js');
+const {BRANDS,SOURCES}=require('./data.js');
+const base={age:'35',motion:true,prior:true,phase:'prevention',duration:'short',severity:'moderate'};
+assert.equal(assess(base).level,'typical');
+for(const flag of ['neuro','collapse','severe']) assert.equal(assess({...base,[flag]:true}).level,'urgent');
+assert.equal(assess({...base,neuro:true,rest:true}).level,'urgent');
+for(const field of [{rest:true},{ear:true},{motion:false},{age:'1'}]) assert.equal(assess({...base,...field}).level,'review');
+for(const age of ['',-1,121,'invalid']) assert.equal(assess({...base,age}).level,'invalid');
+for(const flag of ['pregnancy','glaucoma','organ','sedatives','parkinson','driving']) assert.ok(assess({...base,[flag]:true}).warnings.length>0);
+assert.match(assess({...base,age:'12'}).warnings.join(' '),/adult doses do not apply/);
+assert.match(assess({...base,age:'75'}).warnings.join(' '),/Older adult/);
+assert.equal(BRANDS.length,15);
+for(const group of new Set(BRANDS.map(b=>b[0]))) assert.equal(BRANDS.filter(b=>b[0]===group).length,5);
+for(const b of BRANDS) assert.ok(SOURCES[b[4]][2].startsWith('https://'));
+assert.ok(BRANDS.some(b=>b[1]==='Spinfree'&&b[2].includes('20 mg')));
+console.log('PASS: clinical branches, red-flag priority, safety modifiers and 15 brand references / five per group');
